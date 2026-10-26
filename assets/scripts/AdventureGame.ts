@@ -1,7 +1,7 @@
 import { _decorator, Component, Node, UITransform, UIOpacity, Sprite, SpriteFrame, Texture2D,
     ImageAsset, resources, Graphics, Color, Label, HorizontalTextAlignment, VerticalTextAlignment,
     Layers, Rect, Size, Vec2, Vec3, input, Input, KeyCode, EventKeyboard, EventTouch,
-    view, ResolutionPolicy, sys, tween, BlockInputEvents, AudioSource, AudioClip, profiler, LabelOutline } from 'cc';
+    view, screen, ResolutionPolicy, sys, tween, BlockInputEvents, AudioSource, AudioClip, profiler, LabelOutline, Mask, Camera } from 'cc';
 import { GameModel, WORLD, PLATFORMS, COMBAT, GameEvent } from './GameModel';
 const { ccclass } = _decorator;
 const C = { ink: '#203D38', teal: '#28594F', mint: '#95C9A0', cream: '#FFF8E7', gold: '#E7B765',
@@ -45,13 +45,22 @@ export class AdventureGame extends Component {
     private audio!: AudioSource;
     private clips: Record<string, AudioClip> = {};
     private muted = false;
+    private viewportObserver: ResizeObserver | null = null;
+    private viewportFrame: number | null = null;
 
     onLoad() {
         profiler.hideStats();
+        view.resizeWithBrowserSize(true);
         view.setDesignResolutionSize(1280, 720, ResolutionPolicy.SHOW_ALL);
+        const camera = this.node.getComponentInChildren(Camera);
+        if (camera) camera.clearColor = this.color(C.dark);
         this.node.getChildByName('EditorPreview')?.destroy();
         this.root = this.nodeUI('GameScreen', this.node, -640, -360, 1280, 720);
         this.root.getComponent(UITransform)!.setAnchorPoint(0, 0);
+        // SHOW_ALL scales UI but does not clip out-of-bounds world geometry in editor previews.
+        // Keep the world, HUD and modal input inside the same 16:9 native Cocos viewport.
+        this.root.addComponent(Mask).type = Mask.Type.GRAPHICS_RECT;
+        this.observeViewport();
         this.audio = this.node.addComponent(AudioSource);
         const loading = this.text(this.root, '正在唤醒森林…', 640, 360, 25, C.cream, 700, true);
         input.on(Input.EventType.KEY_DOWN, this.keyDown, this);
@@ -91,6 +100,37 @@ export class AdventureGame extends Component {
             if (err) return reject(err); const t = new Texture2D(); t.image = image; resolve(t);
         }));
     }
+    private observeViewport() {
+        if (typeof window === 'undefined' || typeof document === 'undefined') return;
+        const frame = document.getElementById('GameDiv');
+        if (!frame) return;
+        if (typeof ResizeObserver !== 'undefined') {
+            this.viewportObserver = new ResizeObserver(this.queueViewportSync);
+            this.viewportObserver.observe(frame);
+        }
+        window.addEventListener('resize', this.queueViewportSync);
+        window.visualViewport?.addEventListener('resize', this.queueViewportSync);
+        this.queueViewportSync();
+    }
+    private queueViewportSync = () => {
+        if (this.viewportFrame !== null) return;
+        this.viewportFrame = window.requestAnimationFrame(() => {
+            this.viewportFrame = null;
+            const frame = document.getElementById('GameDiv');
+            const canvas = document.getElementById('GameCanvas') as HTMLCanvasElement | null;
+            if (!frame || !canvas || !frame.clientWidth || !frame.clientHeight) return;
+            const width = Math.round(frame.clientWidth * screen.devicePixelRatio);
+            const height = Math.round(frame.clientHeight * screen.devicePixelRatio);
+            if (canvas.width === width && canvas.height === height) return;
+            // CSS can resize an embedded frame without changing its inline styles. Creator 3.8's
+            // style cache then misses the resize; synchronize via the public screen API.
+            const oldWidth = frame.style.width, oldHeight = frame.style.height;
+            screen.windowSize = new Size(width, height);
+            // Keep the host's responsive CSS instead of leaving a fixed inline pixel size.
+            frame.style.width = oldWidth; frame.style.height = oldHeight;
+            view.setDesignResolutionSize(1280, 720, ResolutionPolicy.SHOW_ALL);
+        });
+    };
     private nodeUI(name: string, parent: Node, x = 0, y = 0, w = 0, h = 0) {
         const n = new Node(name); n.layer = Layers.Enum.UI_2D; parent.addChild(n);
         n.addComponent(UITransform).setContentSize(w, h); n.setPosition(x, y); return n;
@@ -491,6 +531,12 @@ export class AdventureGame extends Component {
     }
     onDestroy() {
         input.off(Input.EventType.KEY_DOWN, this.keyDown, this); input.off(Input.EventType.KEY_UP, this.keyUp, this);
-        if (typeof window !== 'undefined') { window.removeEventListener('blur', this.onBlur); window.removeEventListener('beforeunload', this.onBeforeUnload); }
+        this.viewportObserver?.disconnect();
+        if (typeof window !== 'undefined') {
+            window.removeEventListener('blur', this.onBlur); window.removeEventListener('beforeunload', this.onBeforeUnload);
+            window.removeEventListener('resize', this.queueViewportSync);
+            window.visualViewport?.removeEventListener('resize', this.queueViewportSync);
+            if (this.viewportFrame !== null) window.cancelAnimationFrame(this.viewportFrame);
+        }
     }
 }

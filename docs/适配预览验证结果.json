@@ -1,0 +1,91 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "kind": "editor",
+      "dpr": 1,
+      "viewport": "embedded-wide",
+      "engine": "4.0.0",
+      "rect": {
+        "x": 162,
+        "y": 0,
+        "w": 1141.3333333333335,
+        "h": 642
+      },
+      "letterboxSamples": 6,
+      "modal": true,
+      "pointer": true
+    },
+    {
+      "kind": "editor",
+      "dpr": 1,
+      "viewport": "standard",
+      "engine": "4.0.0",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 1280,
+        "h": 720
+      },
+      "letterboxSamples": 0,
+      "modal": true,
+      "pointer": true
+    },
+    {
+      "kind": "editor",
+      "dpr": 1,
+      "viewport": "four-three",
+      "engine": "4.0.0",
+      "rect": {
+        "x": 0,
+        "y": 96,
+        "w": 1024,
+        "h": 576
+      },
+      "letterboxSamples": 6,
+      "modal": true,
+      "pointer": true
+    },
+    {
+      "kind": "editor",
+      "dpr": 1,
+      "viewport": "phone-landscape",
+      "engine": "4.0.0",
+      "rect": {
+        "x": 75,
+        "y": 0,
+        "w": 693.3333333333333,
+        "h": 390
+      },
+      "letterboxSamples": 6,
+      "modal": true,
+      "pointer": true
+    },
+    {
+      "kind": "editor",
+      "dpr": 1,
+      "viewport": "portrait",
+      "engine": "4.0.0",
+      "rect": {
+        "x": 0,
+        "y": 312.625,
+        "w": 390,
+        "h": 219.375
+      },
+      "letterboxSamples": 6,
+      "modal": true,
+      "pointer": true
+    }
+  ],
+  "errors": [],
+  "hostWarnings": [
+    {
+      "url": "http://localhost:9527/favicon.ico",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "url": "http://localhost:9527/favicon.ico",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    }
+  ]
+}

@@ -1,0 +1,243 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "kind": "web",
+      "dpr": 1,
+      "viewport": "embedded-wide",
+      "engine": "3.8.8",
+      "rect": {
+        "x": 162.328125,
+        "y": 0,
+        "w": 1141.328125,
+        "h": 642
+      },
+      "letterboxSamples": 6,
+      "modal": true,
+      "pointer": true
+    },
+    {
+      "kind": "web",
+      "dpr": 1,
+      "viewport": "standard",
+      "engine": "3.8.8",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 1280,
+        "h": 720
+      },
+      "letterboxSamples": 0,
+      "modal": true,
+      "pointer": true
+    },
+    {
+      "kind": "web",
+      "dpr": 1,
+      "viewport": "four-three",
+      "engine": "3.8.8",
+      "rect": {
+        "x": 0,
+        "y": 96,
+        "w": 1024,
+        "h": 576
+      },
+      "letterboxSamples": 6,
+      "modal": true,
+      "pointer": true
+    },
+    {
+      "kind": "web",
+      "dpr": 1,
+      "viewport": "phone-landscape",
+      "engine": "3.8.8",
+      "rect": {
+        "x": 75.328125,
+        "y": 0,
+        "w": 693.328125,
+        "h": 390
+      },
+      "letterboxSamples": 6,
+      "modal": true,
+      "pointer": true
+    },
+    {
+      "kind": "web",
+      "dpr": 1,
+      "viewport": "portrait",
+      "engine": "3.8.8",
+      "rect": {
+        "x": 0,
+        "y": 312.3125,
+        "w": 390,
+        "h": 219.375
+      },
+      "letterboxSamples": 6,
+      "modal": true,
+      "pointer": true
+    },
+    {
+      "kind": "web",
+      "dpr": 1,
+      "viewport": "safe-area",
+      "rect": {
+        "x": 24,
+        "y": 12.1875,
+        "w": 906,
+        "h": 509.62500000000006
+      }
+    },
+    {
+      "kind": "native-frame",
+      "dpr": 1,
+      "viewport": "embedded-wide",
+      "engine": "3.8.8",
+      "rect": {
+        "x": 162,
+        "y": 0,
+        "w": 1141.3333333333335,
+        "h": 642
+      },
+      "letterboxSamples": 6,
+      "modal": true,
+      "pointer": true
+    },
+    {
+      "kind": "native-frame",
+      "dpr": 1,
+      "viewport": "standard",
+      "engine": "3.8.8",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 1280,
+        "h": 720
+      },
+      "letterboxSamples": 0,
+      "modal": true,
+      "pointer": true
+    },
+    {
+      "kind": "native-frame",
+      "dpr": 1,
+      "viewport": "four-three",
+      "engine": "3.8.8",
+      "rect": {
+        "x": 0,
+        "y": 96,
+        "w": 1024,
+        "h": 576
+      },
+      "letterboxSamples": 6,
+      "modal": true,
+      "pointer": true
+    },
+    {
+      "kind": "native-frame",
+      "dpr": 1,
+      "viewport": "phone-landscape",
+      "engine": "3.8.8",
+      "rect": {
+        "x": 75,
+        "y": 0,
+        "w": 693.3333333333333,
+        "h": 390
+      },
+      "letterboxSamples": 6,
+      "modal": true,
+      "pointer": true
+    },
+    {
+      "kind": "native-frame",
+      "dpr": 1,
+      "viewport": "portrait",
+      "engine": "3.8.8",
+      "rect": {
+        "x": 0,
+        "y": 312.625,
+        "w": 390,
+        "h": 219.375
+      },
+      "letterboxSamples": 6,
+      "modal": true,
+      "pointer": true
+    },
+    {
+      "kind": "native-frame",
+      "dpr": 2,
+      "viewport": "embedded-wide",
+      "engine": "3.8.8",
+      "rect": {
+        "x": 162.5,
+        "y": 0,
+        "w": 1141.3333333333335,
+        "h": 642
+      },
+      "letterboxSamples": 6,
+      "modal": true,
+      "pointer": true
+    },
+    {
+      "kind": "native-frame",
+      "dpr": 2,
+      "viewport": "standard",
+      "engine": "3.8.8",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 1280,
+        "h": 720
+      },
+      "letterboxSamples": 0,
+      "modal": true,
+      "pointer": true
+    },
+    {
+      "kind": "native-frame",
+      "dpr": 2,
+      "viewport": "four-three",
+      "engine": "3.8.8",
+      "rect": {
+        "x": 0,
+        "y": 96,
+        "w": 1024,
+        "h": 576
+      },
+      "letterboxSamples": 6,
+      "modal": true,
+      "pointer": true
+    },
+    {
+      "kind": "native-frame",
+      "dpr": 2,
+      "viewport": "phone-landscape",
+      "engine": "3.8.8",
+      "rect": {
+        "x": 75.5,
+        "y": 0,
+        "w": 693.3333333333333,
+        "h": 390
+      },
+      "letterboxSamples": 6,
+      "modal": true,
+      "pointer": true
+    },
+    {
+      "kind": "native-frame",
+      "dpr": 2,
+      "viewport": "portrait",
+      "engine": "3.8.8",
+      "rect": {
+        "x": 0,
+        "y": 312.125,
+        "w": 390,
+        "h": 219.375
+      },
+      "letterboxSamples": 6,
+      "modal": true,
+      "pointer": true
+    }
+  ],
+  "errors": [],
+  "hostWarnings": []
+}

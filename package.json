@@ -16,6 +16,7 @@
     "typecheck": "node tools/typecheck.cjs",
     "test:smoke": "node tests/cocos-smoke.cjs",
     "test:attack": "node tests/attack-feedback.cjs",
+    "test:viewport": "node tests/viewport-adaptation.cjs",
     "build": "powershell -ExecutionPolicy Bypass -File tools/build.ps1",
     "preview": "node tools/serve.cjs"
   },

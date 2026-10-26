@@ -86,7 +86,7 @@ const projectSettings = read('settings/v2/packages/project.json');
 projectSettings.general = { ...projectSettings.general, designResolution: { width: 1280, height: 720, fitWidth: false, fitHeight: true } };
 write('settings/v2/packages/project.json', projectSettings);
 const pkg = read('package.json'); pkg.name = 'MXD-Maplewild'; pkg.type = '2d'; pkg.version = '0.1.0'; pkg.creator = { version: '3.8.8' };
-pkg.scripts = { 'assets:prepare': 'node tools/prepare-project.cjs', test: 'node tests/game-model.test.cjs', typecheck:'node tools/typecheck.cjs', 'test:smoke':'node tests/cocos-smoke.cjs', 'test:attack':'node tests/attack-feedback.cjs', build: 'powershell -ExecutionPolicy Bypass -File tools/build.ps1', preview: 'node tools/serve.cjs' }; write('package.json', pkg);
+pkg.scripts = { 'assets:prepare': 'node tools/prepare-project.cjs', test: 'node tests/game-model.test.cjs', typecheck:'node tools/typecheck.cjs', 'test:smoke':'node tests/cocos-smoke.cjs', 'test:attack':'node tests/attack-feedback.cjs', 'test:viewport':'node tests/viewport-adaptation.cjs', build: 'powershell -ExecutionPolicy Bypass -File tools/build.ps1', preview: 'node tools/serve.cjs' }; write('package.json', pkg);
 write('buildConfig_web-desktop.json', { name: 'Maplewild', platform: 'web-desktop', buildPath: 'project://build', outputName: 'web-desktop',
     scenes: [{ url: 'db://assets/scenes/ForestAdventure.scene', uuid: ids.scene }], startScene: ids.scene,
     debug: true, sourceMaps: true, md5Cache: false, replaceSplashScreen: true, mainBundleCompressionType: 'merge_dep',
