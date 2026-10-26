@@ -1,0 +1,29 @@
+{
+  "name": "Maplewild",
+  "platform": "web-desktop",
+  "buildPath": "project://build",
+  "outputName": "web-desktop",
+  "scenes": [
+    {
+      "url": "db://assets/scenes/ForestAdventure.scene",
+      "uuid": "0c56af07-a32e-1900-3917-4016dfed23e6"
+    }
+  ],
+  "startScene": "0c56af07-a32e-1900-3917-4016dfed23e6",
+  "debug": true,
+  "sourceMaps": true,
+  "md5Cache": false,
+  "replaceSplashScreen": true,
+  "mainBundleCompressionType": "merge_dep",
+  "previewWidth": 1280,
+  "previewHeight": 720,
+  "packages": {
+    "web-desktop": {
+      "resolution": {
+        "width": 1280,
+        "height": 720
+      },
+      "embedWebDebugger": false
+    }
+  }
+}

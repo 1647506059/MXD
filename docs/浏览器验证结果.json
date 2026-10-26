@@ -1,0 +1,12 @@
+{
+  "engine": "3.8.8",
+  "passed": true,
+  "errors": [],
+  "state": {
+    "quest": 5,
+    "level": 3,
+    "kills": 6,
+    "bossDead": true
+  },
+  "testTravelAccelerated": true
+}
