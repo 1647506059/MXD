@@ -1,0 +1,17 @@
+{
+  "engine": "3.8.8",
+  "passed": true,
+  "renderedFrames": [
+    "hero-attack-0",
+    "hero-attack-1",
+    "hero-attack-2",
+    "hero-attack-3"
+  ],
+  "keyboardRepeat": true,
+  "touchRepeat": true,
+  "releaseStops": true,
+  "naturalWalkMelee": true,
+  "hitAndMissFeedback": true,
+  "pauseBlocksAttack": true,
+  "errors": []
+}

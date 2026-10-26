@@ -1,8 +1,8 @@
 import { _decorator, Component, Node, UITransform, UIOpacity, Sprite, SpriteFrame, Texture2D,
     ImageAsset, resources, Graphics, Color, Label, HorizontalTextAlignment, VerticalTextAlignment,
     Layers, Rect, Size, Vec2, Vec3, input, Input, KeyCode, EventKeyboard, EventTouch,
-    view, ResolutionPolicy, sys, tween, BlockInputEvents, AudioSource, AudioClip, profiler } from 'cc';
-import { GameModel, WORLD, PLATFORMS, GameEvent } from './GameModel';
+    view, ResolutionPolicy, sys, tween, BlockInputEvents, AudioSource, AudioClip, profiler, LabelOutline } from 'cc';
+import { GameModel, WORLD, PLATFORMS, COMBAT, GameEvent } from './GameModel';
 const { ccclass } = _decorator;
 const C = { ink: '#203D38', teal: '#28594F', mint: '#95C9A0', cream: '#FFF8E7', gold: '#E7B765',
     muted: '#A6BCAE', coral: '#DA8265', dark: '#152E2B' };
@@ -23,6 +23,11 @@ export class AdventureGame extends Component {
     private bars: Record<string, Graphics> = {};
     private frames: Record<string, SpriteFrame> = {};
     private hero!: Node;
+    private heroVisual!: Node;
+    private attackFrames: SpriteFrame[] = [];
+    private actionHighlights: Record<string, Node> = {};
+    private touchAttack = false;
+    private combatStatusTime = 0;
     private npc!: Node;
     private monsters: Node[] = [];
     private monsterBars: Graphics[] = [];
@@ -55,7 +60,7 @@ export class AdventureGame extends Component {
             window.addEventListener('blur', this.onBlur);
             window.addEventListener('beforeunload', this.onBeforeUnload);
         }
-        Promise.all([this.loadImage('art/forest'), this.loadImage('art/characters')]).then(([forest, atlas]) => {
+        Promise.all([this.loadImage('art/forest'), this.loadImage('art/characters'), this.loadImage('art/hero-attack')]).then(([forest, atlas, attack]) => {
             const make = (texture: Texture2D, r: number[]) => {
                 const f = new SpriteFrame(); f.reset({ texture, rect: new Rect(...r as [number, number, number, number]),
                     originalSize: new Size(r[2], r[3]), offset: new Vec2(0, 0) }); return f;
@@ -65,6 +70,12 @@ export class AdventureGame extends Component {
             this.frames.slime = make(atlas, [730, 150, 510, 440]);
             this.frames.npc = make(atlas, [50, 605, 510, 640]);
             this.frames.boss = make(atlas, [585, 580, 669, 674]);
+            const aw = attack.width / 2, ah = attack.height / 2;
+            for (let i = 0; i < 4; i++) {
+                const frame = make(attack, [i % 2 * aw, Math.floor(i / 2) * ah, aw, ah]);
+                frame.name = `hero-attack-${i}`; this.attackFrames.push(frame);
+            }
+            this.frames.hero.name = 'hero-idle';
             loading.node.destroy();
             try { const raw = sys.localStorage.getItem(SAVE_KEY); if (raw) this.saved = this.model.restore(raw); } catch (_) { /* storage may be unavailable */ }
             this.buildScene(); this.ready = true;
@@ -139,7 +150,9 @@ export class AdventureGame extends Component {
             this.text(n, e.boss ? '古树守卫' : '叶灵', 0, e.boss ? 262 : 83, e.boss ? 19 : 13, C.ink, 220, true);
             this.monsterBars.push(this.graphics(n, 'Health', 0, e.boss ? 245 : 69)); return n;
         });
-        this.hero = this.sprite(this.world, 'hero', 220, WORLD.ground - 2, 139, 121, true);
+        this.hero = this.nodeUI('Hero', this.world, 220, WORLD.ground, 139, 121);
+        this.heroVisual = this.sprite(this.hero, 'hero', 0, -2, 139, 121, true);
+        this.heroVisual.name = 'HeroVisual';
         const heroTag = this.panel(this.hero, 0, 146, 105, 25, C.cream, 225, 6);
         this.text(heroTag, '风之旅人', 0, 0, 13, C.teal, 100, true, 25);
         this.portal = this.graphics(this.world, 'StarlightPortal', 4970, WORLD.ground + 84);
@@ -203,8 +216,10 @@ export class AdventureGame extends Component {
         this.labels.hint = this.text(this.ui, '', 640, 110, 18, C.cream, 720, true);
         const footer = this.graphics(this.ui, 'Footer'); this.rect(footer, 0, 0, 1280, 61, C.dark, 0, 245);
         this.labels.coins = this.text(this.ui, '', 28, 30, 16, C.gold, 230);
-        this.text(this.ui, 'A D / ← → 移动    ·    E 交互    ·    H 药水', 262, 30, 13, '#B9C7B2', 590);
+        this.text(this.ui, 'A D / ← → 移动 · E 交互 · H 药水', 262, 30, 13, '#B9C7B2', 350);
         this.labels.saved = this.text(this.ui, '本地自动存档', 1125, 30, 11, C.muted, 140);
+        const combat = this.panel(this.ui, 865, 30, 428, 36, '#28473D', 225, 8);
+        this.labels.combat = this.text(combat, 'J 挥斩 · 长按连击  /  K 枫叶旋风', 0, 0, 14, C.cream, 412, true, 34);
         this.bars.exp = this.graphics(this.ui, 'Experience');
         this.labels.exp = this.text(this.ui, '', 640, 73, 11, C.cream, 400, true, 22);
         this.actionButton('J', '挥斩', 939, 'attack');
@@ -223,7 +238,16 @@ export class AdventureGame extends Component {
         this.toastLabel = this.text(this.ui, '', 640, 535, 17, C.cream, 1000, true, 56);
     }
     private actionButton(key: string, label: string, x: number, action: string) {
-        const n = this.button(this.ui, '', x, 113, 78, 72, () => this.doAction(action));
+        const n = this.button(this.ui, '', x, 113, 78, 72, () => { if (action !== 'attack') this.doAction(action); });
+        n.name = `Action-${action}`;
+        const highlight = this.graphics(n, 'ActionFeedback'); highlight.lineWidth = 3; highlight.strokeColor = this.color(C.gold);
+        highlight.roundRect(-37, -34, 74, 68, 7); highlight.stroke(); highlight.node.active = false;
+        this.actionHighlights[action] = highlight.node;
+        if (action === 'attack') {
+            n.on(Node.EventType.TOUCH_START, () => { this.touchAttack = true; this.doAction('attack'); });
+            n.on(Node.EventType.TOUCH_END, () => { this.touchAttack = false; });
+            n.on(Node.EventType.TOUCH_CANCEL, () => { this.touchAttack = false; });
+        }
         this.text(n, key, 0, 12, key === 'SPACE' ? 13 : 23, C.gold, 74, true, 28);
         this.labels[action] = this.text(n, label, 0, -17, 12, C.cream, 76, true, 25);
     }
@@ -241,30 +265,41 @@ export class AdventureGame extends Component {
         if (e.keyCode === KeyCode.KEY_Q) this.showQuest();
     }
     private keyUp(e: EventKeyboard) { this.held.delete(e.keyCode); }
-    private onBlur = () => { this.held.clear(); if (this.ready && !this.overlay && this.model.mode === 'play') this.pause(); };
+    private onBlur = () => { this.held.clear(); this.touchAttack = false; if (this.ready && !this.overlay && this.model.mode === 'play') this.pause(); };
     private onBeforeUnload = () => this.save();
     update(dt: number) {
         if (!this.ready) return;
         const m = this.model;
         m.update(dt, { left: this.held.has(KeyCode.KEY_A) || this.held.has(KeyCode.ARROW_LEFT),
             right: this.held.has(KeyCode.KEY_D) || this.held.has(KeyCode.ARROW_RIGHT) });
-        if (m.mode === 'play' && this.held.has(KeyCode.KEY_J)) m.action('attack');
+        if (m.mode === 'play' && (this.held.has(KeyCode.KEY_J) || this.touchAttack)) m.action('attack');
         this.processEvents(); this.render(dt);
         this.uiClock += dt; this.saveClock += dt;
         if (this.uiClock > 0.1) { this.refreshUI(); this.uiClock = 0; }
         if (this.saveClock > 5 && m.mode === 'play') { this.save(); this.saveClock = 0; }
         this.toastTime -= dt; this.toastLabel.node.active = this.toastTime > 0;
+        this.combatStatusTime -= dt;
+        if (this.combatStatusTime <= 0) this.labels.combat.string = 'J 挥斩 · 长按连击  /  K 枫叶旋风';
     }
     private render(dt: number) {
         const m = this.model, p = m.player, t = m.time;
         this.world.setPosition(-m.camera, 0);
         this.bg.forEach((n, i) => n.setPosition(640 + i * 1280 - m.camera * 0.13, 435));
-        this.hero.setPosition(p.x, p.y - 2);
+        this.hero.setPosition(p.x, p.y);
         const bob = p.grounded && Math.abs(p.vx) > 1 ? Math.sin(t * 17) * 0.035 : Math.sin(t * 3) * 0.012;
-        this.hero.setScale(p.face * (1 - bob), 1 + bob, 1);
-        this.hero.getComponent(Sprite)!.color = this.color('#FFFFFF', p.invulnerable > 0 && Math.sin(t * 40) > 0 ? 100 : 255);
-        // Keep the nameplate facing the camera while the sprite flips.
-        this.hero.children.forEach(n => n.setScale(p.face, 1, 1));
+        const attacking = p.attackTime > 0;
+        const duration = p.attackKind === 'skill' ? COMBAT.skillDuration : COMBAT.meleeDuration;
+        const progress = Math.max(0, Math.min(1, 1 - p.attackTime / duration));
+        const pose = Math.min(3, Math.floor(progress * 4));
+        const visual = this.heroVisual, sprite = visual.getComponent(Sprite)!;
+        sprite.spriteFrame = attacking ? this.attackFrames[pose] : this.frames.hero;
+        visual.getComponent(UITransform)!.setContentSize(attacking ? 201.6 : 139, attacking ? 163.2 : 121);
+        visual.setPosition(attacking ? p.face * Math.sin(progress * Math.PI) * 11 : 0, attacking ? -9.6 : -2);
+        visual.angle = attacking ? p.face * [-7, -3, 5, 0][pose] : 0;
+        visual.setScale(p.face * (1 - bob), 1 + bob, 1);
+        sprite.color = this.color('#FFFFFF', p.invulnerable > 0 && Math.sin(t * 40) > 0 ? 100 : 255);
+        this.actionHighlights.attack.active = attacking && p.attackKind === 'attack';
+        this.actionHighlights.skill.active = attacking && p.attackKind === 'skill';
         this.monsters.forEach((n, i) => {
             const e = m.enemies[i]; n.active = !e.dead;
             n.setPosition(e.x, e.y - 2 + (e.boss ? 0 : Math.abs(Math.sin(t * 3.5 + i)) * 5));
@@ -303,9 +338,18 @@ export class AdventureGame extends Component {
             e.age += ageDt; if (e.age > 0.5) return false;
             const alpha = Math.max(0, 1 - e.age / 0.5);
             if (e.type === 'attack' || e.type === 'skill') {
-                const skill = e.type === 'skill', radius = (skill ? 145 : 72) + e.age * 150;
-                fx.strokeColor = this.color(skill ? '#DFFFD2' : '#FFE2A1', alpha * 245); fx.lineWidth = skill ? 12 : 7;
-                fx.arc(e.x + e.face * (skill ? 70 : 35), e.y, radius, e.face > 0 ? -1.15 : 1.9, e.face > 0 ? 1.15 : 4.4, false); fx.stroke();
+                const skill = e.type === 'skill', radius = (skill ? 160 : 94) + e.age * 45;
+                const sweep = Math.min(1, e.age / (skill ? COMBAT.skillDuration : COMBAT.meleeDuration));
+                const head = 1.25 - sweep * 2.5, tail = head + 0.95;
+                // Draw a moving, outlined blade trail so a miss is visible against the bright forest too.
+                [[19, C.ink], [12, skill ? '#A4E4BB' : '#EDB253'], [4, '#FFF7D3']].forEach(([width, color]) => {
+                    fx.strokeColor = this.color(color as string, alpha * 245); fx.lineWidth = width as number;
+                    for (let j = 0; j <= 18; j++) {
+                        const a = head + (tail - head) * j / 18;
+                        const x = e.x + e.face * (16 + Math.cos(a) * radius), y = e.y + Math.sin(a) * radius;
+                        if (j === 0) fx.moveTo(x, y); else fx.lineTo(x, y);
+                    } fx.stroke();
+                });
             } else {
                 fx.strokeColor = this.color(e.type === 'hurt' ? C.coral : C.gold, alpha * 200); fx.lineWidth = 3;
                 fx.circle(e.x, e.y, e.age * (e.type === 'bossslam' ? 400 : 130) + 9); fx.stroke();
@@ -337,6 +381,11 @@ export class AdventureGame extends Component {
     }
     private processEvents() {
         this.model.drainEvents().forEach(e => {
+            if (e.type === 'attack' || e.type === 'skill') {
+                const name = e.type === 'attack' ? '挥斩' : '枫叶旋风';
+                this.labels.combat.string = e.hits ? `${name} · 命中 ${e.hits} 只魔物` : `${name} · 未命中，靠近面前的魔物`;
+                this.combatStatusTime = 1.8;
+            }
             if (e.type === 'toast') this.toast(e.text!);
             else if (e.type === 'dialog') this.showDialog(e.kind!);
             else if (e.type === 'save') this.save();
@@ -351,6 +400,7 @@ export class AdventureGame extends Component {
     private floatText(e: GameEvent) {
         const color = e.type === 'hurt' ? '#FFAD91' : e.type === 'heal' ? '#C9FFB4' : e.type === 'levelup' ? '#FFF1AB' : C.cream;
         const l = this.text(this.world, e.text || `${e.type === 'hurt' ? '−' : ''}${e.value}`, e.x!, e.y!, e.type === 'levelup' ? 27 : 23, color, 350, true);
+        const outline = l.node.addComponent(LabelOutline); outline.color = this.color(C.dark); outline.width = 2;
         const opacity = l.node.addComponent(UIOpacity);
         tween(l.node).by(0.8, { position: new Vec3(0, 65, 0) }).call(() => l.node.destroy()).start();
         tween(opacity).delay(0.35).to(0.45, { opacity: 0 }).start();
@@ -363,13 +413,13 @@ export class AdventureGame extends Component {
         catch (_) { if (this.labels.saved) this.labels.saved.string = '当前环境无法存档'; }
     }
     private modal(w = 620, h = 390) {
-        this.closeOverlay(false); this.held.clear(); this.model.mode = 'paused';
+        this.closeOverlay(false); this.held.clear(); this.touchAttack = false; this.model.mode = 'paused';
         const n = this.nodeUI('Modal', this.root, 0, 0, 1280, 720); n.getComponent(UITransform)!.setAnchorPoint(0, 0);
         n.addComponent(BlockInputEvents); const dim = this.graphics(n, 'Dim'); this.rect(dim, 0, 0, 1280, 720, C.dark, 0, 155);
         this.overlay = n; return this.panel(n, 640, 352, w, h, C.cream, 255, 18);
     }
     private closeOverlay(resume = true) {
-        if (this.overlay) this.overlay.destroy(); this.overlay = null; this.dialogConfirm = null; this.held.clear();
+        if (this.overlay) this.overlay.destroy(); this.overlay = null; this.dialogConfirm = null; this.held.clear(); this.touchAttack = false;
         if (resume) this.model.mode = this.model.quest === 5 ? 'victory' : 'play';
     }
     private showTitle() {

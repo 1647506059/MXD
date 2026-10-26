@@ -1,19 +1,20 @@
 /** Deterministic game rules, independent from Cocos rendering. Units: pixels / seconds. */
 export const WORLD = { width: 5200, ground: 144, gravity: 1800, speed: 285, jump: 660 };
+export const COMBAT = { meleeDuration: 0.28, skillDuration: 0.38 };
 export const PLATFORMS = [
     { x: 650, y: 266, w: 230 }, { x: 1000, y: 380, w: 240 },
     { x: 1410, y: 272, w: 270 }, { x: 1840, y: 392, w: 240 },
     { x: 2280, y: 280, w: 260 }, { x: 2720, y: 386, w: 250 },
     { x: 3150, y: 268, w: 270 }, { x: 3640, y: 350, w: 230 },
 ];
-export type GameEvent = { type: string; x?: number; y?: number; text?: string; value?: number; kind?: string };
+export type GameEvent = { type: string; x?: number; y?: number; text?: string; value?: number; kind?: string; hits?: number };
 export type InputState = { left?: boolean; right?: boolean };
 export type Enemy = { id: number; x: number; y: number; home: number; hp: number; maxHp: number;
     dir: number; dead: boolean; timer: number; hit: number; boss: boolean; phase: string; attackTimer: number; targetX: number };
 export class GameModel {
     player = { x: 220, y: 144, vx: 0, vy: 0, face: 1, grounded: true, jumps: 0,
         hp: 120, maxHp: 120, mp: 70, maxMp: 70, level: 1, exp: 0, coins: 0, potions: 5,
-        invulnerable: 0, attackCd: 0, skillCd: 0, dashCd: 0, dashTime: 0, attackTime: 0 };
+        invulnerable: 0, attackCd: 0, skillCd: 0, dashCd: 0, dashTime: 0, attackTime: 0, attackKind: 'attack' as 'attack' | 'skill' };
     enemies: Enemy[] = [];
     drops: { x: number; y: number; age: number; value: number }[] = [];
     projectiles: { x: number; y: number; vx: number; life: number }[] = [];
@@ -61,14 +62,14 @@ export class GameModel {
             this.emit('jump', { x: p.x, y: p.y, value: p.jumps });
         }
         if (action === 'attack' && p.attackCd <= 0) {
-            p.attackCd = 0.32; p.attackTime = 0.20;
-            this.strike(145, this.attackPower, false);
-            this.emit('attack', { x: p.x, y: p.y + 52, value: p.face });
+            p.attackCd = 0.32; p.attackTime = COMBAT.meleeDuration; p.attackKind = 'attack';
+            const hits = this.strike(145, this.attackPower, false);
+            this.emit('attack', { x: p.x, y: p.y + 52, value: p.face, hits });
         }
         if (action === 'skill' && p.skillCd <= 0 && p.mp >= 18) {
-            p.mp -= 18; p.skillCd = 1.7; p.attackTime = 0.32;
-            this.strike(270, this.attackPower * 2, true);
-            this.emit('skill', { x: p.x, y: p.y + 48, value: p.face });
+            p.mp -= 18; p.skillCd = 1.7; p.attackTime = COMBAT.skillDuration; p.attackKind = 'skill';
+            const hits = this.strike(270, this.attackPower * 2, true);
+            this.emit('skill', { x: p.x, y: p.y + 48, value: p.face, hits });
         } else if (action === 'skill' && p.mp < 18) this.emit('toast', { text: '魔力不足，稍等片刻即可恢复' });
         if (action === 'dash' && p.dashCd <= 0) {
             p.dashCd = 1.1; p.dashTime = 0.17; p.invulnerable = Math.max(p.invulnerable, 0.27);
@@ -84,16 +85,19 @@ export class GameModel {
     }
     strike(range: number, damage: number, skill: boolean) {
         const p = this.player;
+        let hits = 0;
         for (const e of this.enemies) {
             if (e.dead || (e.boss && this.quest < 3)) continue;
             const dx = e.x - p.x;
             if ((skill ? Math.abs(dx) < range : dx * p.face > -35 && dx * p.face < range) && Math.abs(e.y - p.y) < (e.boss ? 170 : 85)) {
+                hits++;
                 e.hp = Math.max(0, e.hp - damage); e.hit = 0.18;
                 if (!e.boss) e.x += p.face * 18;
                 this.emit('damage', { x: e.x, y: e.y + (e.boss ? 210 : 75), value: damage, kind: skill ? 'skill' : 'normal' });
                 if (!e.hp) this.kill(e);
             }
         }
+        return hits;
     }
     kill(e: Enemy) {
         e.dead = true; e.timer = 23; this.kills++;
@@ -239,6 +243,7 @@ export class GameModel {
             this.bossDead = !!s.bossDead; this.enemies = s.enemies; this.drops = Array.isArray(s.drops) ? s.drops : [];
             this.player.x = Math.max(35, Math.min(WORLD.width - 35, this.player.x));
             this.player.y = WORLD.ground; this.player.vy = this.player.vx = 0; this.player.jumps = 0; this.player.grounded = true;
+            this.player.attackTime = this.player.attackCd = this.player.dashTime = 0; this.player.attackKind = 'attack';
             this.player.hp = Math.max(1, Math.min(this.player.maxHp, this.player.hp));
             this.mode = this.quest === 5 ? 'victory' : 'play';
             this.camera = Math.max(0, Math.min(WORLD.width - 1280, this.player.x - 480)); return true;

@@ -15,6 +15,7 @@
     "test": "node tests/game-model.test.cjs",
     "typecheck": "node tools/typecheck.cjs",
     "test:smoke": "node tests/cocos-smoke.cjs",
+    "test:attack": "node tests/attack-feedback.cjs",
     "build": "powershell -ExecutionPolicy Bypass -File tools/build.ps1",
     "preview": "node tools/serve.cjs"
   },

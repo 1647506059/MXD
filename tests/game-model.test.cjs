@@ -53,4 +53,14 @@ test('save round trip keeps quest, stats and defeated boss; malformed data rejec
  assert.equal(new GameModel().restore('{bad'),false); assert.equal(new GameModel().restore('{"version":2}'),false);
 });
 test('pause freezes physics and prevents attacks', () => { const m=new GameModel(); m.mode='paused'; const x=m.player.x; m.update(1,{right:true}); m.action('skill'); assert.equal(m.player.x,x); assert.equal(m.player.mp,70); });
+test('empty swings still publish feedback and a timed character animation', () => {
+ const m=new GameModel(); m.action('attack'); const swing=m.drainEvents().find(e=>e.type==='attack');
+ assert.equal(swing.hits,0); assert.equal(m.player.attackKind,'attack'); assert.ok(m.player.attackTime>0);
+ advance(m,0.4); assert.equal(m.player.attackTime,0);
+ m.action('skill'); assert.equal(m.player.attackKind,'skill'); assert.equal(m.drainEvents().find(e=>e.type==='skill').hits,0);
+});
+test('successful attacks report hit count; reload does not resume a stale swing', () => {
+ const m=new GameModel(); m.player.x=780; m.action('attack'); assert.equal(m.drainEvents().find(e=>e.type==='attack').hits,1);
+ const restored=new GameModel(); assert.equal(restored.restore(m.serialize()),true); assert.equal(restored.player.attackTime,0);
+});
 console.log(`${passed} gameplay checks passed.`);

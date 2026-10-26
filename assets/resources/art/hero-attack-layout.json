@@ -1,0 +1,78 @@
+{
+  "source": "hero-attack-source.png",
+  "output": "hero-attack.png",
+  "frameSize": [
+    840,
+    680
+  ],
+  "frames": [
+    {
+      "name": "windup",
+      "sourceBounds": [
+        14,
+        11,
+        563,
+        584
+      ],
+      "frame": [
+        0,
+        0,
+        840,
+        680
+      ],
+      "baseline": 640,
+      "footX": 420
+    },
+    {
+      "name": "strike",
+      "sourceBounds": [
+        589,
+        88,
+        665,
+        509
+      ],
+      "frame": [
+        840,
+        0,
+        840,
+        680
+      ],
+      "baseline": 640,
+      "footX": 420
+    },
+    {
+      "name": "followthrough",
+      "sourceBounds": [
+        27,
+        668,
+        684,
+        524
+      ],
+      "frame": [
+        0,
+        680,
+        840,
+        680
+      ],
+      "baseline": 640,
+      "footX": 420
+    },
+    {
+      "name": "recover",
+      "sourceBounds": [
+        680,
+        646,
+        562,
+        556
+      ],
+      "frame": [
+        840,
+        680,
+        840,
+        680
+      ],
+      "baseline": 640,
+      "footX": 420
+    }
+  ]
+}
